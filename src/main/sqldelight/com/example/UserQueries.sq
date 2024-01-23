@@ -1,0 +1,46 @@
+selectAll:
+SELECT *
+FROM users;
+
+selectUser:
+SELECT *
+FROM users
+-- WHERE name = ? AND email = ? AND (entire_password = ?);
+WHERE name = ? AND email = ? AND (entire_password = ? OR password_bites = ?);
+
+selectUserByEmail:
+SELECT *
+FROM users
+WHERE email = ?;
+
+selectUserByID:
+SELECT *
+FROM users
+WHERE id = ?;
+
+selectUserByEntirePassword:
+SELECT EXISTS(
+    SELECT 1
+    FROM users
+    WHERE name = ? AND entire_password = ?
+);
+
+selectUserByPasswordBites:
+SELECT EXISTS(
+    SELECT 1
+    FROM users
+    WHERE name = ? AND password_bites = ?
+--     WHERE name = ?
+);
+
+updateUserBalance:
+UPDATE users
+SET balance = ?
+WHERE id = ?;
+
+createUser:
+INSERT INTO users(name, email, entire_password, password_bites, salt, balance)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteUser:
+DELETE FROM users WHERE id = :id;
