@@ -7,6 +7,7 @@ import com.example.data.services.DatabaseUserModel
 import com.example.data.services.TransactionService
 import com.example.data.services.UsersService
 import com.example.domain.*
+import com.nimbusds.jose.JWSAlgorithm
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -18,11 +19,15 @@ import io.ktor.server.resources.Resources
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.*
+import java.security.SecureRandom
 import java.util.*
+
+private val SECRET = generateSecretKey()
 
 fun Application.configureRouting(usersService: UsersService, transactionService: TransactionService) {
 
     val emailAndJwtTokenMap: Map<Email, String> = emptyMap()
+
 
     install(Resources)
     install(AutoHeadResponse)
@@ -234,7 +239,6 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
 
 const val ISSUER = "sk_eepw_issuer_odas"
 const val AUDIENCE = "sk_eepw_audience_odas"
-const val SECRET = "sk_eepw_secret_odas"
 
 fun generateToken(username: String): String {
     val tokenDuration = 60 * 6 * 1_000// 6 min
@@ -294,4 +298,19 @@ fun DatabaseUserModel.asSafeUser(): UserWithoutSecureData {
         this.email,
         this.id.toInt()
     )
+}
+
+
+fun generateSecretKey(): String {
+    val algorithm = JWSAlgorithm.HS256
+    val keyLength = 256
+
+    val random = SecureRandom()
+    val secretKeyBytes = ByteArray(keyLength / 8)
+    random.nextBytes(secretKeyBytes)
+
+    // Convert the byte array to a Base64-encoded string
+    val base64EncodedKey = Base64.getEncoder().encode(secretKeyBytes)
+
+    return base64EncodedKey.toString()
 }
