@@ -17,15 +17,12 @@ import io.ktor.server.request.*
 import io.ktor.server.resources.Resources
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.util.*
 import kotlinx.serialization.*
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
 import java.util.*
 
 fun Application.configureRouting(usersService: UsersService, transactionService: TransactionService) {
+
+    val emailAndJwtTokenMap: Map<Email, String> = emptyMap()
 
     install(Resources)
     install(AutoHeadResponse)
@@ -134,16 +131,15 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
 
                 val newUser = NewUserModel(
                     name = request.name,
-                    surname = request.surname,
                     email = request.email,
                     password = request.password,
                 )
 
                 if (!usersService.createUser(newUser)) {
-                    call.respond(ApiResponse("USER_ALREADY_EXISTS", null))
+                    call.respond(ApiResponse("USER_ALREADY_EXISTS", "success" to true))
                 }
 
-                call.respond(ApiResponse(null, null))
+                call.respond(ApiResponse(null, "success" to true))
             } catch (e: Exception) {
                 if (e is CredentialException) {
                     call.respondBadRequest(e.message)
@@ -154,15 +150,48 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
             }
         }
         authenticate("jwt") {
-            get("usersList") {
+            get("/user/{id}") {
+                try {
+                    val userId = call.parameters["id"]?.toIntOrNull() ?: throw IllegalArgumentException("User with id not found")
+
+                    val principal = call.principal<JWTPrincipal>()
+                    val idData = usersService.getUserWithId(id = userId) ?: throw IllegalArgumentException("User with id not found")
+                    if (idData.email != principal?.subject) {
+                        throw IllegalArgumentException("No permission to view this user")
+                    }
+                    val response = PrivateUserModel(
+                        name = idData.name,
+                        email = idData.email,
+                        balance = idData.balance,
+                        accountNumber = "11200333-333"
+                    )
+                    call.respond(ApiResponse(null, response))
+                } catch (e: Exception) {
+                    call.respond(ApiResponse("Failed to get user because: ${e.message}", null))
+                }
+            }
+
+            get("/user_id/{email}") {
+                try {
+                    val userEmail = call.parameters["email"] ?: throw IllegalArgumentException("User with email not found")
+
+                    val userID = usersService.getUserIdWithEmail(userEmail)
+
+                    call.respond(ApiResponse(null, userID))
+                } catch (e: Exception) {
+                    call.respond(ApiResponse("Failed to get user because: ${e.message}", null))
+                }
+            }
+
+
+            get("/usersList") {
                 try {
                     val users = usersService.getAll().map { it.asSafeUser() }
-                    call.respond(ApiResponse("Get successful", "users" to users))
+                    call.respond(ApiResponse("Get successful", users))
                 } catch (e: Exception) {
                     call.respond(ApiResponse("Failed to deposit: ${e.message}", null))
                 }
             }
-            
             post("/deposit") {
                 val request = call.receive<DepositRequest>()
 
@@ -259,8 +288,8 @@ suspend inline fun ApplicationCall.respondBadRequest(slug: String? = null) {
 //    }
 //}
 
-fun DatabaseUserModel.asSafeUser() {
-    UserWithoutSecureData(
+fun DatabaseUserModel.asSafeUser(): UserWithoutSecureData {
+    return UserWithoutSecureData(
         this.name,
         this.email,
         this.id.toInt()

@@ -23,8 +23,6 @@ data class LoginRequest(
 data class RegisterRequest(
     @SerialName("name")
     val name: String,
-    @SerialName("surname")
-    val surname: String,
     @SerialName("email")
     val email: String,
     @SerialName("password")

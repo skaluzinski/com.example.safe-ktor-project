@@ -43,6 +43,14 @@ class UserDatabase {
         }
     }
 
+    fun getUserEmailBits(email: String): List<String> {
+        return _database.userQueriesQueries.selectUserByEmail(email).executeAsOne().password_bites.split(",")
+    }
+
+    fun userWithEmailOrNull(email: String): DatabaseUserModel? {
+        return _database.userQueriesQueries.selectUserByEmail(email).executeAsOneOrNull()?.asDatabaseModel()
+    }
+
     fun createUser(user: GeneralUserModel, salt: String) {
         _database.userQueriesQueries.createUser(
             name = user.name,

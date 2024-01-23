@@ -18,6 +18,7 @@ interface UsersService {
     fun genLoginBitsIndexesOrThrow(email: Email): List<Int>
     fun isPasswordValidLoginCredential(email: Email, password: Password): Boolean
     fun getUserWithId(id: Int): DatabaseUserModel?
+    fun getUserIdWithEmail(email: String): Int?
     fun getAll(): List<DatabaseUserModel>
     fun deleteUser(id: Int): Boolean
     fun createUser(model: NewUserModel): Boolean
@@ -96,25 +97,37 @@ class UsersServiceImpl(
         val currentTime = Clock.System.now().toLocalDateTime(timeZone).toJavaLocalDateTime()
 
         val expiresAt = permittedLoginCredentialsForUser.expiresAt.toJavaLocalDateTime()
-        val userCanLogin = expiresAt.isBefore(currentTime)
+        val userCanLogin = expiresAt.isAfter(currentTime)
 
         if (!userCanLogin) {
             return false
         }
 
         val encryptedBits =
-            passwordBitesWithIndex.mapKeys { hashingService.hashString(string = it.toString(), salt = userSalt) }
+            passwordBitesWithIndex.mapValues { hashingService.hashString(string = it.toString(), salt = userSalt) }
+        encryptedBits.forEach { t, u ->
+            println("$t $u")
+        }
 
-        println("### permitedBits: ${permittedLoginCredentialsForUser.hashedPasswordBits}")
-        println("### receivedBits: $passwordBitesWithIndex")
-        println("### hashedBits: $encryptedBits")
+        usersDatabase.getUserEmailBits(email = email.value).forEachIndexed { index, c ->
+            println("### $index : $c")
+        }
+        val bits = usersDatabase.getUserEmailBits(email = email.value)
+        val knownBits = permittedLoginCredentialsForUser.hashedPasswordBits
+        val areBitsCorrect = encryptedBits.all { (index, key) ->
+            knownBits[index] == key
+        }
 
-        return encryptedBits == permittedLoginCredentialsForUser.hashedPasswordBits
+        return areBitsCorrect
     }
 
     override fun createUser(model: NewUserModel): Boolean {
         val salt = hashingService.generateSalt()
         if (!isPasswordValid(model.password)) {
+            return false
+        }
+
+        if (usersDatabase.userWithEmailOrNull(email = model.email) != null) {
             return false
         }
 
@@ -137,7 +150,6 @@ class UsersServiceImpl(
 
         val newUser = GeneralUserModel(
             name = model.name,
-            surname = model.surname,
             email = model.email,
             password = encryptedPassword,
             joinedPasswordBites = encryptedPasswordBites,
@@ -152,6 +164,10 @@ class UsersServiceImpl(
 
     override fun getUserWithId(id: Int): DatabaseUserModel? {
         return usersDatabase.getUserByIdOrNull(id)
+    }
+
+    override fun getUserIdWithEmail(email: String): Int? {
+        return usersDatabase.getUserOrNull(email)?.id?.toInt()
     }
 
     override fun getAll(): List<DatabaseUserModel> {
