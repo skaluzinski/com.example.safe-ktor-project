@@ -8,20 +8,18 @@ import kotlinx.datetime.*
 import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import kotlin.math.ceil
-import kotlin.math.floor
 
 private const val TIMEZONE = "Europe/Berlin"
 
 interface UsersService {
-    fun canUserLogin(email: Email): Boolean
+    fun isUserRegistered(email: Email): Boolean
     fun genLoginBitsIndexesOrThrow(email: Email): List<Int>
     fun isPasswordValidLoginCredential(email: Email, password: Password): Boolean
     fun getUserWithId(id: Int): DatabaseUserModel?
     fun getUserIdWithEmail(email: String): Int?
     fun getAll(): List<DatabaseUserModel>
     fun deleteUser(id: Int): Boolean
-    fun createUser(model: NewUserModel): Boolean
+    fun createUserOrFalse(model: NewUserModel): Boolean
     fun arePasswordBitesValidLoginCredentials(email: Email, passwordBitesWithIndex: Map<Int, Char>): Boolean
 }
 
@@ -40,12 +38,12 @@ class UsersServiceImpl(
 
     private val loginBitsPossibleToLogin: ConcurrentMap<Email, LoginPasswordBits> = ConcurrentHashMap()
 
-    override fun canUserLogin(email: Email): Boolean {
+    override fun isUserRegistered(email: Email): Boolean {
         return usersDatabase.getUserOrNull(email.value) != null
     }
 
     override fun genLoginBitsIndexesOrThrow(email: Email): List<Int> {
-        val userData = usersDatabase.getUserOrNull(email.value) ?: throw Exception(ErrorSlugs.USER_NOT_FOUND)
+        val userData = usersDatabase.getUserOrNull(email.value) ?: throw Exception(ErrorSlug.USER_NOT_FOUND.name)
         val passwordSize = userData.encryptedPasswordBites.size
         val allEncryptedPasswordCharacters = userData.encryptedPasswordBites
 
@@ -121,7 +119,7 @@ class UsersServiceImpl(
         return areBitsCorrect
     }
 
-    override fun createUser(model: NewUserModel): Boolean {
+    override fun createUserOrFalse(model: NewUserModel): Boolean {
         val salt = hashingService.generateSalt()
         if (!isPasswordValid(model.password)) {
             return false

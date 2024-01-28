@@ -1,0 +1,426 @@
+openapi: "3.0.3"
+info:
+  title: "com_example_safe_ktor_project API"
+  description: "com_example_safe_ktor_project API"
+  version: "1.0.0"
+servers:
+- url: "https://com_example_safe_ktor_project"
+paths:
+  /create_user:
+    post:
+      description: ""
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponse_Pair<? extends String, ? extends\
+                  \ Boolean>"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "USER_ALREADY_EXISTS"
+                    data: "null"
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+  /deposit:
+    post:
+      description: ""
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/DepositRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "Deposit successful"
+                    data: "null"
+  /login:
+    post:
+      description: ""
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "500":
+          description: "Internal Server Error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: ""
+                Example#2:
+                  value: ""
+                Example#3:
+                  value: ""
+                Example#4:
+                  value: ""
+                Example#5:
+                  value: ""
+                Example#6:
+                  value: ""
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+              examples:
+                Example#1:
+                  description: ""
+                  value: "INVALID_LOGIN_CREDENTIALS"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema: {}
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "INVALID_LOGIN_CREDENTIALS"
+                    data: "null"
+                Example#2:
+                  description: ""
+                  value:
+                    message: "USER_NOT_FOUND"
+                    data: "null"
+  /login_with_bits:
+    post:
+      description: ""
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "INVALID_LOGIN_CREDENTIALS"
+                    data: "null"
+                Example#2:
+                  description: ""
+                  value: "INVALID_LOGIN_CREDENTIALS"
+  /request_login_with_bits:
+    post:
+      description: ""
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/EmailRequest"
+        required: true
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "object"
+              examples:
+                Example#1:
+                  description: ""
+                  value: "INVALID_LOGIN_CREDENTIALS"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema: {}
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "INVALID_LOGIN_CREDENTIALS"
+                    data: "null"
+  /transactions/send_money:
+    post:
+      description: ""
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/SendMoneyRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "Money sent successfully"
+                    data: "null"
+  /transactions/withdraw:
+    post:
+      description: ""
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/WithdrawRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "Withdrawal successful"
+                    data: "null"
+  /user/{id}:
+    get:
+      description: ""
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "integer"
+      responses:
+        "500":
+          description: "Internal Server Error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: ""
+                Example#2:
+                  value: ""
+                Example#3:
+                  value: ""
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema: {}
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "null"
+                    data:
+                      name: "null"
+                      email: "null"
+                      balance: "null"
+                      accountNumber: "11200333-333"
+  /user_id/{email}:
+    get:
+      description: ""
+      parameters:
+      - name: "email"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "500":
+          description: "Internal Server Error"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: ""
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema: {}
+  /usersList:
+    get:
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema: {}
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    message: "Get successful"
+                    data: "null"
+components:
+  schemas:
+    RegisterRequest:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        email:
+          type: "string"
+        password:
+          type: "string"
+    ApiResponse:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+    ApiResponse_Pair<? extends String, ? extends Boolean>:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          type: "object"
+    DepositRequest:
+      type: "object"
+      properties:
+        userId:
+          type: "integer"
+          format: "int32"
+        amount:
+          type: "number"
+          format: "float"
+    LoginRequest:
+      type: "object"
+      properties:
+        email:
+          type: "string"
+        password:
+          type: "string"
+    ApiResponse_Map<String, ? extends String>:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          type: "string"
+    Map:
+      type: "object"
+      properties: {}
+    ApiResponse_Map:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          $ref: "#/components/schemas/Map"
+    EmailRequest:
+      type: "object"
+      properties:
+        email:
+          type: "string"
+    ApiResponse_Map<String, ? extends List<? extends Integer>>:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          type: "string"
+    SendMoneyRequest:
+      type: "object"
+      properties:
+        senderId:
+          type: "integer"
+          format: "int32"
+        recipientId:
+          type: "integer"
+          format: "int32"
+        amount:
+          type: "number"
+          format: "float"
+    WithdrawRequest:
+      type: "object"
+      properties:
+        userId:
+          type: "integer"
+          format: "int32"
+        amount:
+          type: "number"
+          format: "float"
+    PrivateUserModel:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        email:
+          type: "string"
+        balance:
+          type: "number"
+          format: "float"
+        accountNumber:
+          type: "string"
+    ApiResponse_PrivateUserModel:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          $ref: "#/components/schemas/PrivateUserModel"
+    ApiResponse_Integer:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          type: "integer"
+          format: "int32"
+    UserWithoutSecureData:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        email:
+          type: "string"
+        id:
+          type: "integer"
+          format: "int32"
+    ApiResponse_List<? extends UserWithoutSecureData>:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/UserWithoutSecureData"

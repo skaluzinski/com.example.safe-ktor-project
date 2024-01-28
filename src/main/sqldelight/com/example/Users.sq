@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS users (
     entire_password TEXT NOT NULL,
     password_bites TEXT  NOT NULL,
     salt TEXT NOT NULL,
-    balance REAL NOT NULL
+    balance INTEGER NOT NULL
 );

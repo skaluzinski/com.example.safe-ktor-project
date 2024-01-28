@@ -1,5 +1,7 @@
 package com.example.plugins
 
+import com.example.domain.ApiResponseSerializer
+import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -10,7 +12,7 @@ import kotlinx.serialization.json.Json
 
 fun Application.configureSerialization() {
     install(ContentNegotiation) {
-        json()
+        json ()
         jackson()
     }
 }

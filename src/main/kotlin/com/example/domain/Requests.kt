@@ -3,9 +3,14 @@ package com.example.domain
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-data class DepositRequest(val userId: Int, val amount: Float)
-data class WithdrawRequest(val userId: Int, val amount: Float)
-data class SendMoneyRequest(val senderId: Int, val recipientId: Int, val amount: Float)
+@Serializable
+data class DepositRequest(val amount: Float)
+
+@Serializable
+data class WithdrawRequest(val amount: Float)
+
+@Serializable
+data class SendMoneyRequest(val recipientEmail: String, val amount: Float)
 
 @Serializable
 data class EmailRequest(
@@ -28,6 +33,7 @@ data class RegisterRequest(
     @SerialName("password")
     val password: String,
 )
+
 
 @Serializable
 data class LoginWithBitsRequest(val email: String, val bits: Map<Int, Char>)

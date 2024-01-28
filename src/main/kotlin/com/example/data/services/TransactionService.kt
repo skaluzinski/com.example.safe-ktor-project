@@ -1,53 +1,49 @@
 package com.example.data.services
 
 import com.example.data.database.UserDatabase
-import com.example.domain.ErrorSlugs
+import com.example.domain.Email
+import com.example.domain.ErrorSlug
+import com.example.domain.ErrorSlugException
 
 interface TransactionService {
-    fun sendMoneyOrThrow(senderId: Int, recipientId: Int, amount: Float)
-    fun depositMoneyOrThrow(userId: Int, amount: Float)
-    fun withdrawMoneyOrThrow(userId: Int, amount: Float)
+    fun depositMoneyOrThrow(email: Email, amount: Float)
+    fun sendMoneyOrThrow(senderEmail: Email, recipentEmail: Email, amount: Float)
+    fun withdrawMoneyOrThrow(userEmail: Email, amount: Float)
 }
 
 class TransactionServiceImpl(
     private val usersDatabase: UserDatabase,
 ) : TransactionService {
-    override fun depositMoneyOrThrow(userId: Int, amount: Float) {
-        val user = usersDatabase.getUserByIdOrNull(userId)
-            ?: throw java.lang.IllegalArgumentException(ErrorSlugs.USER_NOT_FOUND)
+    override fun depositMoneyOrThrow(email: Email, amount: Float) {
+        val user = usersDatabase.getUserByEmailOrNull(email.value) ?: throw ErrorSlugException(ErrorSlug.USER_NOT_FOUND)
 
         val updatedBalance = user.balance + amount
-        usersDatabase.updateUserBalance(userId, updatedBalance.toDouble())
+        usersDatabase.updateUserBalance(email.value, updatedBalance)
     }
 
-    override fun withdrawMoneyOrThrow(userId: Int, amount: Float) {
-        val user = usersDatabase.getUserByIdOrNull(userId)
-            ?: throw java.lang.IllegalArgumentException(ErrorSlugs.USER_NOT_FOUND)
+    override fun withdrawMoneyOrThrow(userEmail: Email, amount: Float) {
+        val user = usersDatabase.getUserByEmailOrNull(userEmail.value) ?: throw ErrorSlugException(ErrorSlug.USER_NOT_FOUND)
 
         if (user.balance < amount) {
-            throw IllegalArgumentException(ErrorSlugs.BALANCE_NOT_SUFICIENT)
+            throw ErrorSlugException(ErrorSlug.BALANCE_NOT_SUFFICIENT)
         }
 
         val updatedBalance = user.balance - amount
-        usersDatabase.updateUserBalance(userId, updatedBalance.toDouble())
+        usersDatabase.updateUserBalance(userEmail.value, updatedBalance)
     }
 
-    override fun sendMoneyOrThrow(senderId: Int, recipientId: Int, amount: Float) {
-        val sender = usersDatabase.getUserByIdOrNull(senderId)
-        val recipient = usersDatabase.getUserByIdOrNull(recipientId)
-
-        if (sender == null || recipient == null) {
-            throw java.lang.IllegalArgumentException(ErrorSlugs.USER_NOT_FOUND)
-        }
+    override fun sendMoneyOrThrow(senderEmail: Email, recipentEmail: Email, amount: Float) {
+        val sender = usersDatabase.getUserByEmailOrNull(senderEmail.value) ?: throw ErrorSlugException(ErrorSlug.INVALID_SENDER_CREDENTIALS)
+        val recipient = usersDatabase.getUserByEmailOrNull(recipentEmail.value) ?: throw ErrorSlugException(ErrorSlug.INVALID_RECIPIENT_CREDENTIALS)
 
         if (sender.balance < amount) {
-            throw IllegalArgumentException(ErrorSlugs.BALANCE_NOT_SUFICIENT)
+            throw ErrorSlugException(ErrorSlug.BALANCE_NOT_SUFFICIENT)
         }
 
         val updatedSenderBalance = sender.balance - amount
         val updatedRecipientBalance = recipient.balance + amount
 
-        usersDatabase.updateUserBalance(senderId, updatedSenderBalance.toDouble())
-        usersDatabase.updateUserBalance(recipientId, updatedRecipientBalance.toDouble())
+        usersDatabase.updateUserBalance(senderEmail.value, updatedSenderBalance)
+        usersDatabase.updateUserBalance(recipentEmail.value, updatedRecipientBalance)
     }
 }

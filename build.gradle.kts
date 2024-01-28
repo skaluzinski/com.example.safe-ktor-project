@@ -11,6 +11,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
     id("app.cash.sqldelight") version "2.0.0"
     id("com.google.devtools.ksp") version "1.9.0-1.0.13"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 
 }
 
@@ -55,11 +56,12 @@ dependencies {
     implementation("io.ktor:ktor-server-caching-headers-jvm")
     implementation("io.ktor:ktor-server-resources")
     implementation("io.ktor:ktor-server-auto-head-response-jvm")
-    implementation("io.ktor:ktor-server-sessions-jvm")
+    implementation("io.ktor:ktor-server-sessions:$ktor_version")
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-host-common-jvm:2.3.7")
     implementation("io.ktor:ktor-server-status-pages-jvm:2.3.7")
+    implementation("io.ktor:ktor-server-sessions-jvm:2.3.7")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.7")
@@ -82,5 +84,6 @@ dependencies {
     implementation("io.arrow-kt:arrow-fx-coroutines:1.2.0")
     implementation("com.nimbusds:nimbus-jose-jwt:9.7")
 
-
+    implementation("io.ktor:ktor-network-tls-certificates:$ktor_version")
+    implementation("org.xerial:sqlite-jdbc:3.45.0.0")
 }

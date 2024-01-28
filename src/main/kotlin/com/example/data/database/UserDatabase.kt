@@ -5,10 +5,11 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.example.Database
 import com.example.Users
 import com.example.data.services.DatabaseUserModel
+import com.example.domain.Email
 import com.example.domain.GeneralUserModel
 import java.lang.Exception
 
-private const val DATABASE_URL = "jdbc:sqlite:test13237.db"
+private const val DATABASE_URL = "jdbc:sqlite:test133237.db"
 
 class UserDatabase {
     private var _database: Database
@@ -37,6 +38,15 @@ class UserDatabase {
         }
     }
 
+    fun getUserByEmailOrNull(email: String): DatabaseUserModel? {
+        return try {
+            val queryResult = _database.userQueriesQueries.selectUserByEmail(email).executeAsOne()
+            queryResult.asDatabaseModel()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun getUsers(): List<DatabaseUserModel> {
         return _database.userQueriesQueries.selectAll().executeAsList().map {
             it.asDatabaseModel()
@@ -58,7 +68,7 @@ class UserDatabase {
             entire_password = user.password,
             password_bites = user.joinedPasswordBites!!,
             salt = salt,
-            balance = 0.0
+            balance = 0
         )
     }
 
@@ -68,8 +78,10 @@ class UserDatabase {
         return queryResultAfterDeletion == null
     }
 
-    fun updateUserBalance(userId: Int, newBalance: Double) {
-        _database.userQueriesQueries.updateUserBalance(newBalance, userId.toLong())
+    fun updateUserBalance(email: String, newBalance: Float) {
+        val revisedBalance = newBalance.times(100).toInt().toLong()
+
+        _database.userQueriesQueries.updateUserBalanceWithEmail(balance = revisedBalance, email = email)
     }
 }
 

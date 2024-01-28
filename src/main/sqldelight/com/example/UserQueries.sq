@@ -38,6 +38,11 @@ UPDATE users
 SET balance = ?
 WHERE id = ?;
 
+updateUserBalanceWithEmail:
+UPDATE users
+SET balance = ?
+WHERE email = ?;
+
 createUser:
 INSERT INTO users(name, email, entire_password, password_bites, salt, balance)
 VALUES (?, ?, ?, ?, ?, ?);
