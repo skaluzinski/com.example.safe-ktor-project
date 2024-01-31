@@ -1,6 +1,5 @@
 package com.example.plugins
 
-import com.example.data.services.DatabaseUserModel
 import com.example.data.services.TransactionService
 import com.example.data.services.UsersService
 import com.example.domain.*
@@ -21,6 +20,9 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
     install(Resources)
     install(AutoHeadResponse)
     install(StatusPages) {
+        status(HttpStatusCode.Unauthorized) { applicationCall, httpStatusCode ->
+            applicationCall.respond(ApiResponse("SLUG:[${ErrorSlug.OPERATION_NEEDS_RECENT_LOGIN}]", null))
+        }
         exception<Throwable> { call, cause ->
             call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
         }
@@ -28,6 +30,8 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
 
     routing {
         post("/login") {
+            val postStartTime = System.currentTimeMillis()
+
             val email: Email
             val password: Password
             try {
@@ -43,16 +47,20 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
             val isPasswordCorrect = usersService.isPasswordValidLoginCredential(email, password)
 
             if (isUserRegistered && isPasswordCorrect) {
-                val sessionUUID = UUID.randomUUID()
                 val currenTime = java.time.LocalDateTime.now()
                 val expireTime = currenTime.plusMinutes(15.toLong()).toKotlinLocalDateTime()
 
-                val newSession = UserSession(uuid = sessionUUID, email = email, expireTime = expireTime)
+                val newSession = UserSession(email = email, expireTime = expireTime)
 
                 call.sessions.set(newSession)
-                respondWithData(mapOf("userId" to sessionUUID.toString()))
+
+                takeAtLeastTimeBetween(startReferenceTimeInMillis = postStartTime) {
+                    this.respondWithOperationSuccess(success = true)
+                }
             } else {
-                respondWithErrorSlug(ErrorSlug.INVALID_LOGIN_CREDENTIALS)
+                takeAtLeastTimeBetween(startReferenceTimeInMillis = postStartTime) {
+                    respondWithErrorSlug(ErrorSlug.INVALID_LOGIN_CREDENTIALS)
+                }
             }
         }
         post("/request_login_with_bits") {
@@ -98,6 +106,7 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
             }
         }
         post("/create_user") {
+            val postStartTime = System.currentTimeMillis()
             try {
                 val request = call.receive<RegisterRequest>()
 
@@ -113,9 +122,14 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
                     respondWithOperationSuccess(true)
                 }
             } catch (e: ErrorSlugException) {
-                respondWithErrorSlug(e.slug)
+                takeAtLeastTimeBetween(startReferenceTimeInMillis = postStartTime) {
+                    respondWithErrorSlug(e.slug)
+                }
             } catch (e: Exception) {
-                respondWithErrorSlug(ErrorSlug.CREATE_USER_CREDENTIALS_INVALID)
+                println("### $e ${e.message} ${e.cause} ${e.stackTrace}")
+                takeAtLeastTimeBetween(startReferenceTimeInMillis = postStartTime) {
+                    respondWithErrorSlug(ErrorSlug.CREATE_USER_CREDENTIALS_INVALID)
+                }
             }
         }
         get("/logout") {
@@ -126,54 +140,67 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
                 respondWithOperationSuccess(false)
             }
         }
-        post("/deposit") {
-            val request = call.receive<DepositRequest>()
 
-            try {
+        authenticate("user_session") {
+            get("/user") {
                 val userSession = getCurrentUserSessionOrThrow()
 
-                transactionService.depositMoneyOrThrow(userSession.email, request.amount)
-
-                respondWithOperationSuccess(true)
-            } catch (e: ErrorSlugException) {
-                respondWithErrorSlug(e.slug)
-            } catch (e: Exception) {
-                respondWithErrorSlug(ErrorSlug.DEPOSIT_FAILED)
-            }
-        }
-
-        route("/transactions") {
-            post("/withdraw") {
-                val request = call.receive<WithdrawRequest>()
-
-                try {
-                    val session = getCurrentUserSessionOrThrow()
-
-                    transactionService.withdrawMoneyOrThrow(session.email, request.amount)
-                    respondWithOperationSuccess(success = true)
-                } catch (e: ErrorSlugException) {
-                    respondWithErrorSlug(e.slug)
-                } catch (e: Exception) {
-                    respondWithOperationSuccess(success = false)
+                val data = usersService.getUserDataWithEmail(userSession.email)
+                if (data != null) {
+                    respondWithData(data)
+                } else {
+                    respondWithErrorSlug(ErrorSlug.USER_NOT_FOUND)
                 }
             }
+            route("/transactions") {
+                post("/deposit") {
+                    val request = call.receive<DepositRequest>()
 
-            post("/send_money") {
-                val request = call.receive<SendMoneyRequest>()
-                try {
-                    val senderSession = getCurrentUserSessionOrThrow()
-                    val recipientEmail = Email(request.recipientEmail)
+                    try {
+                        val userSession = getCurrentUserSessionOrThrow()
 
-                    transactionService.sendMoneyOrThrow(
-                        senderEmail = senderSession.email,
-                        recipentEmail = recipientEmail,
-                        amount = request.amount
-                    )
-                    respondWithOperationSuccess(success = true)
-                } catch (e: ErrorSlugException) {
-                    respondWithErrorSlug(e.slug)
-                } catch (e: Exception) {
-                    respondWithOperationSuccess(success = false)
+                        transactionService.depositMoneyOrThrow(userSession.email, request.amount)
+
+                        respondWithOperationSuccess(true)
+                    } catch (e: ErrorSlugException) {
+                        respondWithErrorSlug(e.slug)
+                    } catch (e: Exception) {
+                        respondWithErrorSlug(ErrorSlug.DEPOSIT_FAILED)
+                    }
+                }
+
+                post("/withdraw") {
+                    val request = call.receive<WithdrawRequest>()
+
+                    try {
+                        val session = getCurrentUserSessionOrThrow()
+
+                        transactionService.withdrawMoneyOrThrow(session.email, request.amount)
+                        respondWithOperationSuccess(success = true)
+                    } catch (e: ErrorSlugException) {
+                        respondWithErrorSlug(e.slug)
+                    } catch (e: Exception) {
+                        respondWithOperationSuccess(success = false)
+                    }
+                }
+
+                post("/send_money") {
+                    val request = call.receive<SendMoneyRequest>()
+                    try {
+                        val senderSession = getCurrentUserSessionOrThrow()
+                        val recipientEmail = Email(request.recipientEmail)
+
+                        transactionService.sendMoneyOrThrow(
+                            senderEmail = senderSession.email,
+                            recipentEmail = recipientEmail,
+                            amount = request.amount
+                        )
+                        respondWithOperationSuccess(success = true)
+                    } catch (e: ErrorSlugException) {
+                        respondWithErrorSlug(e.slug)
+                    } catch (e: Exception) {
+                        respondWithOperationSuccess(success = false)
+                    }
                 }
             }
         }

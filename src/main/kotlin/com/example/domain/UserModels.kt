@@ -1,5 +1,7 @@
 package com.example.domain
 
+import com.example.data.database.RevisedTransaction
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -37,3 +39,33 @@ data class PrivateUserModel(
     val balance: Float,
     val accountNumber: String
 )
+
+
+data class DatabaseUserModel(
+    val id: Long,
+    val name: String,
+    val email: String,
+    val encryptedPassword: String,
+    val encryptedPasswordBites: List<String>,
+    val salt: String,
+    val balance: Float,
+    val transactions: List<RevisedTransaction>
+)
+
+@Serializable
+data class LoginPasswordBits(
+    val expiresAt: LocalDateTime,
+    val hashedPasswordBits: Map<Int, String>,
+)
+
+@Serializable
+data class SafeUserModel(
+    val name: String,
+    val email: String,
+    val balance: Float,
+    val transactions: List<RevisedTransaction>
+)
+
+fun DatabaseUserModel.asSafeModel(): SafeUserModel {
+    return SafeUserModel(this.name, this.email, this.balance, transactions)
+}

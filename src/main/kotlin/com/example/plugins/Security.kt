@@ -16,7 +16,9 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
+import java.time.Duration
 import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 
 fun Application.configureSecurity() {
     install(Sessions) {
@@ -24,6 +26,8 @@ fun Application.configureSecurity() {
         cookie<UserSession>("user_session", SessionStorageMemory()) {
             serializer = KotlinxSessionSerializer(Json)
             cookie.path = "/"
+            cookie.maxAgeInSeconds = 1.minutes.inWholeSeconds
+            cookie.maxAge = 1.minutes
             transform(SessionTransportTransformerMessageAuthentication(secretSignKey))
         }
     }
@@ -39,12 +43,8 @@ fun Application.configureSecurity() {
     }
 }
 
-private const val SESSION_LENGTH_IN_MINUTES = 15
-
 @Serializable
 data class UserSession(
-    @Serializable(with = UUIDSerializer::class)
-    val uuid: UUID,
     val email: Email,
     val count: Int = 0,
     val expireTime: LocalDateTime,
@@ -52,7 +52,7 @@ data class UserSession(
 
 fun UserSession.isSessionStillValid(): Boolean {
     val currentTime = java.time.LocalDateTime.now()
-    return currentTime.isAfter(this.expireTime.toJavaLocalDateTime())
+    return currentTime.isBefore(this.expireTime.toJavaLocalDateTime())
 }
 
 object UUIDSerializer : KSerializer<UUID> {

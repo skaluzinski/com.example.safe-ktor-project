@@ -20,18 +20,17 @@ fun main() {
 
 fun Application.module() {
     val userDatabase = UserDatabase()
+    val hashingService = HashingServiceImpl()
+    val transactionService = TransactionServiceImpl(usersDatabase = userDatabase)
+    val usersService = UsersServiceImpl(usersDatabase = userDatabase, hashingService = hashingService)
+
     configureSecurity()
     configureSerialization()
     configureMonitoring()
     configureHTTP()
     configureRouting(
-        usersService = UsersServiceImpl(
-            usersDatabase = userDatabase,
-            hashingService = HashingServiceImpl()
-        ),
-        transactionService = TransactionServiceImpl(
-            userDatabase
-        )
+        usersService = usersService,
+        transactionService = transactionService
     )
 }
 

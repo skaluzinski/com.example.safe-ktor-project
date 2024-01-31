@@ -49,3 +49,8 @@ VALUES (?, ?, ?, ?, ?, ?);
 
 deleteUser:
 DELETE FROM users WHERE id = :id;
+
+updateTransactionsForUser:
+UPDATE users
+SET transactions = ?
+WHERE email = ?;

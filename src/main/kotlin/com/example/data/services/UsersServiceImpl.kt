@@ -8,6 +8,7 @@ import kotlinx.datetime.*
 import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import javax.xml.crypto.Data
 
 private const val TIMEZONE = "Europe/Berlin"
 
@@ -19,6 +20,7 @@ interface UsersService {
     fun getUserIdWithEmail(email: String): Int?
     fun getAll(): List<DatabaseUserModel>
     fun deleteUser(id: Int): Boolean
+    fun getUserDataWithEmail(email: Email) : SafeUserModel?
     fun createUserOrFalse(model: NewUserModel): Boolean
     fun arePasswordBitesValidLoginCredentials(email: Email, passwordBitesWithIndex: Map<Int, Char>): Boolean
 }
@@ -175,19 +177,8 @@ class UsersServiceImpl(
     override fun deleteUser(id: Int): Boolean {
         return usersDatabase.deleteUser(id)
     }
+
+    override fun getUserDataWithEmail(email: Email): SafeUserModel? {
+        return usersDatabase.getUserByEmailOrNull(email.value)?.asSafeModel()
+    }
 }
-
-data class DatabaseUserModel(
-    val id: Long,
-    val name: String,
-    val email: String,
-    val encryptedPassword: String,
-    val encryptedPasswordBites: List<String>,
-    val salt: String,
-    val balance: Float,
-)
-
-data class LoginPasswordBits(
-    val expiresAt: LocalDateTime,
-    val hashedPasswordBits: Map<Int, String>,
-)

@@ -1,5 +1,6 @@
-import java.lang.String;
+import com.example.data.database.DatabaseTransaction;
 import kotlin.collections.List;
+
 -- DROP TABLE users;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -9,5 +10,6 @@ CREATE TABLE IF NOT EXISTS users (
     entire_password TEXT NOT NULL,
     password_bites TEXT  NOT NULL,
     salt TEXT NOT NULL,
-    balance INTEGER NOT NULL
+    balance INTEGER NOT NULL,
+    transactions TEXT AS List<DatabaseTransaction>
 );
