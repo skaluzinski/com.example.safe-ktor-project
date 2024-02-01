@@ -45,6 +45,7 @@ data class DatabaseUserModel(
     val id: Long,
     val name: String,
     val email: String,
+    val cardNumber: String,
     val encryptedPassword: String,
     val encryptedPasswordBites: List<String>,
     val salt: String,
@@ -62,10 +63,11 @@ data class LoginPasswordBits(
 data class SafeUserModel(
     val name: String,
     val email: String,
+    val cardNumber: String,
     val balance: Float,
     val transactions: List<RevisedTransaction>
 )
 
 fun DatabaseUserModel.asSafeModel(): SafeUserModel {
-    return SafeUserModel(this.name, this.email, this.balance, transactions)
+    return SafeUserModel(this.name, this.email, this.cardNumber,this.balance, transactions)
 }

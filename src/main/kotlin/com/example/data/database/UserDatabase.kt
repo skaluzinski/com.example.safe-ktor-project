@@ -20,9 +20,12 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import java.lang.Exception
+import java.security.Key
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 
 private const val DATABASE_URL = "jdbc:sqlite:test133237.db"
 
@@ -105,13 +108,17 @@ class UserDatabase {
     }
 
     fun createUser(user: GeneralUserModel, salt: String) {
+        val cardNumber = generateRandomCardNumber()
+        val encryptedCardNumber = encrypt(cardNumber, user.password)
+
         _database.userQueriesQueries.createUser(
             name = user.name,
             email = user.email,
+            card_number = encryptedCardNumber,
             entire_password = user.password,
             password_bites = user.joinedPasswordBites!!,
             salt = salt,
-            balance = 0
+            balance = 0,
         )
     }
 
@@ -197,11 +204,44 @@ class UserDatabase {
     }
 }
 
+
+private fun generateSecretKey(userKeyPart: String): Key {
+    val masterKeyPartInBytes = System.getenv("encryptMasterKey").toByteArray().take(24)
+    val userKeyParInBytes = userKeyPart.toByteArray().take(8)
+    val keyBytes = mutableListOf<Byte>()
+    keyBytes.addAll(masterKeyPartInBytes)
+    keyBytes.addAll(userKeyParInBytes)
+
+    return SecretKeySpec(keyBytes.toByteArray(), "AES")
+}
+
+private fun encrypt(value: String, userKeyPart: String): String {
+    val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+    val secretKey = generateSecretKey(userKeyPart)
+    cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+
+    // Assuming UTF-8 encoding for simplicity
+    val encryptedBytes = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+    return Base64.getEncoder().encodeToString(encryptedBytes)
+}
+
+private fun decrypt(value: String,userKeyPart: String): String {
+    val cipher = Cipher.getInstance("AES/ECB/PKCS5Padding")
+    val secretKey = generateSecretKey(userKeyPart)
+
+    cipher.init(Cipher.DECRYPT_MODE, secretKey)
+
+    val encryptedBytes = Base64.getDecoder().decode(value)
+    val decryptedBytes = cipher.doFinal(encryptedBytes)
+    return String(decryptedBytes, Charsets.UTF_8)
+}
+
 fun Users.asDatabaseModel(): DatabaseUserModel {
     return DatabaseUserModel(
         id = this.id,
         name = this.name,
         email = this.email,
+        cardNumber = decrypt(card_number, this.entire_password),
         encryptedPassword = this.entire_password,
         encryptedPasswordBites = this.password_bites.split(",").filter { it != "," },
         balance = this.balance.div(100f),
@@ -275,4 +315,20 @@ object LocalDateSerializer : KSerializer<LocalDate> {
     override fun deserialize(decoder: Decoder): LocalDate {
         return LocalDate.parse(decoder.decodeString())
     }
+}
+
+private fun generateRandomCardNumber(): String {
+    val random = Random()
+    val builder = StringBuilder("4")
+    repeat(3) {
+        builder.append(random.nextInt(10))
+    }
+    repeat(3) {
+        builder.append("-")
+        repeat(4) {
+            builder.append(random.nextInt(10))
+        }
+    }
+
+    return builder.toString()
 }

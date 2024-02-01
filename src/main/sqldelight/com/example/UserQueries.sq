@@ -44,8 +44,8 @@ SET balance = ?
 WHERE email = ?;
 
 createUser:
-INSERT INTO users(name, email, entire_password, password_bites, salt, balance)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO users(name, email, card_number,entire_password, password_bites, salt, balance)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 deleteUser:
 DELETE FROM users WHERE id = :id;

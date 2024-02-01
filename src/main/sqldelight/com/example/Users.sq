@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
+    card_number TEXT NOT NULL,
     entire_password TEXT NOT NULL,
     password_bites TEXT  NOT NULL,
     salt TEXT NOT NULL,
