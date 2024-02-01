@@ -86,10 +86,47 @@ dependencies {
 
     implementation("io.ktor:ktor-network-tls-certificates:$ktor_version")
     implementation("org.xerial:sqlite-jdbc:3.45.0.0")
+    implementation("org.xerial:sqlite-jdbc:3.34.0") // Replace with the latest version
+
+}
+
+//task fatJar(type: Jar) {
+//    manif«est {
+//        attributes 'Main-Class': mainClassName
+//    }
+//    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+//    with jar
+//}
+
+tasks.withType<Jar> {
+    manifest {
+        attributes["Main-Class"] = "com.example.ApplicationKt"
+    }
 }
 
 ktor {
     fatJar {
         archiveFileName.set("fat.jar")
+    }
+
+    docker {
+        jreVersion.set(JavaVersion.VERSION_18)
+        localImageName.set("sample-docker-image")
+        imageTag.set("0.0.1-preview")
+        portMappings.set(listOf(
+            io.ktor.plugin.features.DockerPortMapping(
+                80,
+                8080,
+                io.ktor.plugin.features.DockerPortMappingProtocol.TCP
+            )
+        ))
+
+        externalRegistry.set(
+            io.ktor.plugin.features.DockerImageRegistry.dockerHub(
+                appName = provider { "ktor-app" },
+                username = providers.environmentVariable("DOCKER_HUB_USERNAME"),
+                password = providers.environmentVariable("DOCKER_HUB_PASSWORD")
+            )
+        )
     }
 }

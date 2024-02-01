@@ -28,10 +28,8 @@ private const val DATABASE_URL = "jdbc:sqlite:test133237.db"
 
 private val transactionsAdapter  = object : ColumnAdapter<List<DatabaseTransaction>, String>  {
     override fun decode(databaseValue: String): List<DatabaseTransaction> {
-        println("### database $databaseValue")
 
         return if (databaseValue.isEmpty()) {
-            println("### is empty")
             emptyList()
         } else {
             databaseValue.split(";").map { Json.decodeFromString(it) }
@@ -39,9 +37,6 @@ private val transactionsAdapter  = object : ColumnAdapter<List<DatabaseTransacti
     }
 
     override fun encode(value: List<DatabaseTransaction>): String {
-        println("### value : $value")
-        println("### value : ${value.map {Json.encodeToString(it) }.joinToString(",")}")
-
         return value.joinToString(";") { Json.encodeToString(it) }
     }
 
@@ -52,6 +47,8 @@ class UserDatabase {
     private var _database: Database
 
     init {
+        Class.forName("org.sqlite.JDBC").newInstance();
+
         val driver: SqlDriver = JdbcSqliteDriver(
             url = DATABASE_URL,
             schema = Database.Schema,

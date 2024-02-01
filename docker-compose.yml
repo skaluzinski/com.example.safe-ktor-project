@@ -1,0 +1,21 @@
+#version: "1.0"
+#
+#services:
+#  app:
+#    build: ./
+#    container_name: "ktor-app"
+#    volumes:
+#      - ./:/safe-ktor-project
+#    ports:
+#      - 8080:8080
+#      - 8443:8443
+#    expose:
+#      - 8443
+
+version: '3'
+services:
+  ktor-app:
+    build:
+      context: .
+    ports:
+      - "8080:8080"

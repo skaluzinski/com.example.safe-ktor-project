@@ -10,6 +10,7 @@ import java.io.File
 
 fun TLSEnviroment(): ApplicationEngineEnvironment {
     val keyStoreFile = File("build/keystore.jks")
+
     val keyStore = buildKeyStore {
         certificate("sampleSebastianAlias") {
             password = "sample123"
@@ -23,14 +24,14 @@ fun TLSEnviroment(): ApplicationEngineEnvironment {
         connector {
             port = 8080
         }
-//        sslConnector(
-//            keyStore = keyStore,
-//            keyAlias = "sampleSebastianAlias",
-//            keyStorePassword = { "qwerty1234".toCharArray() },
-//            privateKeyPassword = { "sample123".toCharArray() }) {
-//            port = 8443
-//            keyStorePath = keyStoreFile
-//        }
+        sslConnector(
+            keyStore = keyStore,
+            keyAlias = "sampleSebastianAlias",
+            keyStorePassword = { "qwerty1234".toCharArray() },
+            privateKeyPassword = { "sample123".toCharArray() }) {
+            port = 8443
+            keyStorePath = keyStoreFile
+        }
         module(Application::module)
     }
 
