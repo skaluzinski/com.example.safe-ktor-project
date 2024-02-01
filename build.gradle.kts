@@ -87,3 +87,9 @@ dependencies {
     implementation("io.ktor:ktor-network-tls-certificates:$ktor_version")
     implementation("org.xerial:sqlite-jdbc:3.45.0.0")
 }
+
+ktor {
+    fatJar {
+        archiveFileName.set("fat.jar")
+    }
+}

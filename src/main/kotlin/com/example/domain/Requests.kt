@@ -10,7 +10,7 @@ data class DepositRequest(val amount: Float)
 data class WithdrawRequest(val amount: Float)
 
 @Serializable
-data class SendMoneyRequest(val recipientEmail: String, val amount: Float)
+data class SendMoneyRequest(val recipientEmail: String, val title: String, val amount: Float)
 
 @Serializable
 data class EmailRequest(

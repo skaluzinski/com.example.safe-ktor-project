@@ -14,7 +14,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import kotlinx.datetime.toKotlinLocalDateTime
-import java.util.UUID
 
 fun Application.configureRouting(usersService: UsersService, transactionService: TransactionService) {
     install(Resources)
@@ -168,7 +167,6 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
                         respondWithErrorSlug(ErrorSlug.DEPOSIT_FAILED)
                     }
                 }
-
                 post("/withdraw") {
                     val request = call.receive<WithdrawRequest>()
 
@@ -183,7 +181,6 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
                         respondWithOperationSuccess(success = false)
                     }
                 }
-
                 post("/send_money") {
                     val request = call.receive<SendMoneyRequest>()
                     try {
@@ -193,7 +190,8 @@ fun Application.configureRouting(usersService: UsersService, transactionService:
                         transactionService.sendMoneyOrThrow(
                             senderEmail = senderSession.email,
                             recipentEmail = recipientEmail,
-                            amount = request.amount
+                            amountToSend = request.amount,
+                            title = request.title
                         )
                         respondWithOperationSuccess(success = true)
                     } catch (e: ErrorSlugException) {

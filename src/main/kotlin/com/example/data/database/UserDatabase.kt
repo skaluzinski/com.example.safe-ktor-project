@@ -6,13 +6,12 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.example.Database
 import com.example.Users
 import com.example.data.services.NewTransaction
+import com.example.data.services.NewTwoWayTransaction
 import com.example.data.services.asDatabaseTransaction
 import com.example.domain.DatabaseUserModel
 import com.example.domain.GeneralUserModel
-import io.ktor.serialization.kotlinx.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -20,13 +19,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import java.lang.Exception
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Local
 
 private const val DATABASE_URL = "jdbc:sqlite:test133237.db"
 
@@ -148,21 +144,58 @@ class UserDatabase {
         )
     }
 
-    fun addTwoWayTransaction(newTransaction: RevisedTransaction) {
+    fun addTwoWayTransaction(newTransaction: NewTwoWayTransaction) {
         val sender =_database.userQueriesQueries.selectUserByEmail(newTransaction.senderEmail).executeAsOne()
         val senderTransactions = sender.transactions?.toMutableList() ?: mutableListOf()
-//        senderTransactions.add(newTransaction.asDatabaseTransaction())
+
+        val senderNewTransactionId = if (senderTransactions.isEmpty()) {
+            0
+        } else {
+            senderTransactions.lastIndex.plus(1)
+        }
+
+        val senderTransaction = NewTransaction(
+            recipientEmail = newTransaction.recipientEmail,
+            balanceBefore = newTransaction.senderBalanceBefore,
+            balanceAfter = newTransaction.senderBalanceAfter,
+            senderEmail = newTransaction.senderEmail,
+            transactionDate = LocalDate.now(),
+            transactionAmount = newTransaction.transactionAmount,
+            title = newTransaction.title,
+            type = "Paid"
+        )
+
+        senderTransactions.add(senderTransaction.asDatabaseTransaction(senderNewTransactionId.toLong()))
 
         val recipient = _database.userQueriesQueries.selectUserByEmail(newTransaction.recipientEmail!!).executeAsOne()
         val recipientTransactions = recipient.transactions?.toMutableList() ?: mutableListOf()
-//        recipientTransactions.add(
-////            newTransaction.asDatabaseTransaction().copy(
-//
-//            )
-//        )
+
+        val recipientTransaction = NewTransaction(
+            recipientEmail = newTransaction.recipientEmail,
+            balanceBefore = newTransaction.recipientBalanceBefore,
+            balanceAfter = newTransaction.recipientBalanceAfter,
+            senderEmail = newTransaction.senderEmail,
+            transactionDate = LocalDate.now(),
+            transactionAmount = newTransaction.transactionAmount,
+            title = newTransaction.title,
+            type = "Received"
+        )
+
+        val recipientNewTransactionId = if (recipientTransactions.isEmpty()) {
+            0
+        } else {
+            recipientTransactions.lastIndex.plus(1)
+        }
+
+        recipientTransactions.add(recipientTransaction.asDatabaseTransaction(recipientNewTransactionId.toLong()))
+
         _database.userQueriesQueries.updateTransactionsForUser(
             transactions = senderTransactions,
             email = sender.email
+        )
+        _database.userQueriesQueries.updateTransactionsForUser(
+            transactions = recipientTransactions,
+            email = recipient.email
         )
     }
 }

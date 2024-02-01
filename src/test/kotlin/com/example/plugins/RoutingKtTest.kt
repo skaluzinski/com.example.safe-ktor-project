@@ -22,7 +22,7 @@ class RoutingKtTest {
     @Test
     fun testPostCreateuser() = testApplication {
         application {
-            configureRouting()
+//            configureRouting()
         }
         client.post("/create_user").apply {
             TODO("Please write your test here")

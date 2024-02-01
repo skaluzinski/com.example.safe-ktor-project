@@ -2,17 +2,17 @@ package com.example.data.services
 
 import com.example.data.database.DatabaseTransaction
 import com.example.data.database.LocalDateSerializer
-import com.example.data.database.RevisedTransaction
 import com.example.data.database.UserDatabase
 import com.example.domain.Email
 import com.example.domain.ErrorSlug
 import com.example.domain.ErrorSlugException
 import kotlinx.serialization.Serializable
+import org.slf4j.helpers.FormattingTuple
 import java.time.LocalDate
 
 interface TransactionService {
     fun depositMoneyOrThrow(email: Email, amount: Float)
-    fun sendMoneyOrThrow(senderEmail: Email, recipentEmail: Email, amount: Float)
+    fun sendMoneyOrThrow(senderEmail: Email, recipentEmail: Email, title: String,amountToSend: Float)
     fun withdrawMoneyOrThrow(userEmail: Email, amount: Float)
 }
 
@@ -63,16 +63,31 @@ class TransactionServiceImpl(
         usersDatabase.updateUserBalance(userEmail.value, updatedBalance)
     }
 
-    override fun sendMoneyOrThrow(senderEmail: Email, recipentEmail: Email, amount: Float) {
+    override fun sendMoneyOrThrow(senderEmail: Email, recipentEmail: Email, title: String,amountToSend: Float) {
         val sender = usersDatabase.getUserByEmailOrNull(senderEmail.value) ?: throw ErrorSlugException(ErrorSlug.INVALID_SENDER_CREDENTIALS)
         val recipient = usersDatabase.getUserByEmailOrNull(recipentEmail.value) ?: throw ErrorSlugException(ErrorSlug.INVALID_RECIPIENT_CREDENTIALS)
 
-        if (sender.balance < amount) {
+        if (sender.balance < amountToSend) {
             throw ErrorSlugException(ErrorSlug.BALANCE_NOT_SUFFICIENT)
         }
 
-        val updatedSenderBalance = sender.balance - amount
-        val updatedRecipientBalance = recipient.balance + amount
+        val updatedSenderBalance = sender.balance - amountToSend
+        val updatedRecipientBalance = recipient.balance + amountToSend
+
+        usersDatabase.addTwoWayTransaction(
+            newTransaction = NewTwoWayTransaction(
+                transactionAmount = amountToSend,
+                transactionDate = LocalDate.now(),
+                recipientEmail = recipient.email,
+                senderEmail = sender.email,
+                recipientBalanceAfter = updatedRecipientBalance,
+                recipientBalanceBefore = recipient.balance,
+                senderBalanceAfter = updatedSenderBalance,
+                senderBalanceBefore = sender.balance,
+                title = title,
+                type = ""
+            )
+        )
 
         usersDatabase.updateUserBalance(senderEmail.value, updatedSenderBalance)
         usersDatabase.updateUserBalance(recipentEmail.value, updatedRecipientBalance)
@@ -95,6 +110,22 @@ data class NewTransaction(
     val balanceAfter: Float,
     val transactionAmount: Float,
 )
+
+@Serializable
+data class NewTwoWayTransaction(
+    @Serializable(with = LocalDateSerializer::class)
+    val transactionDate: LocalDate,
+    val senderEmail: String,
+    val recipientEmail: String?,
+    val recipientBalanceBefore: Float,
+    val senderBalanceBefore: Float,
+    val recipientBalanceAfter: Float,
+    val senderBalanceAfter: Float,
+    val type: String,
+    val title: String,
+    val transactionAmount: Float,
+)
+
 
 fun NewTransaction.asDatabaseTransaction(transactionId: Long): DatabaseTransaction {
     return DatabaseTransaction(
